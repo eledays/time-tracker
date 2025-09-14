@@ -200,48 +200,64 @@ function drawPie() {
 // --- Rendering ---
 function renderAll() {
     // tasks list
-    tasksContainer.innerHTML = '';
-    if (tasks.length === 0) {
-        tasksContainer.appendChild(emptyHint);
-    } else {
-        emptyHint.remove();
-        tasks.forEach(t => {
-            const curMs = currentTimeForTask(t);
-            const running = !!t.runningSince;
+    const existingTasks = new Map();
+    tasksContainer.querySelectorAll('.task').forEach(el => {
+        const id = parseInt(el.dataset.id, 10);
+        existingTasks.set(id, el);
+    });
 
-            const el = document.createElement('div');
-            el.className = 'task' + (running ? ' active' : '');
+    tasks.forEach(t => {
+        const curMs = currentTimeForTask(t);
+        const running = !!t.runningSince;
+
+        let el = existingTasks.get(t.id);
+        if (!el) {
+            // Create new task element if it doesn't exist
+            el = document.createElement('div');
+            el.className = 'task';
+            el.dataset.id = t.id;
+
             // left
             const left = document.createElement('div');
             left.className = 'left';
             const title = document.createElement('div');
             title.className = 'title';
-            title.textContent = t.name;
+            left.appendChild(title);
             const time = document.createElement('div');
             time.className = 'time';
-            time.textContent = formatMs(curMs);
-            left.appendChild(title);
             left.appendChild(time);
+            el.appendChild(left);
 
             // right
             const right = document.createElement('div');
             right.className = 'actions';
             const idEl = document.createElement('div');
             idEl.className = 'id';
-            idEl.textContent = 'ID ' + t.id;
-            const btn = document.createElement('button');
-            btn.className = 'btn toggle ' + (running ? 'stop' : 'start');
-            btn.textContent = running ? 'Остановить' : 'Запуск';
-            btn.addEventListener('click', () => toggleRunning(t.id));
-
             right.appendChild(idEl);
+            const btn = document.createElement('button');
+            btn.className = 'btn toggle';
+            btn.addEventListener('click', () => toggleRunning(t.id));
             right.appendChild(btn);
-
-            el.appendChild(left);
             el.appendChild(right);
+
             tasksContainer.appendChild(el);
-        });
-    }
+        }
+
+        // Update task element
+        el.className = 'task' + (running ? ' active' : '');
+        el.querySelector('.title').textContent = t.name;
+        el.querySelector('.time').textContent = formatMs(curMs);
+        el.querySelector('.id').textContent = 'ID ' + t.id;
+        const btn = el.querySelector('.btn.toggle');
+        btn.className = 'btn toggle ' + (running ? 'stop' : 'start');
+        btn.textContent = running ? 'Остановить' : 'Запуск';
+
+        // Remove from map to track unused elements
+        existingTasks.delete(t.id);
+    });
+
+    // Remove unused task elements
+    existingTasks.forEach(el => el.remove());
 
     // total
     totalTimeEl.textContent = formatMs(totalMsAll());
@@ -253,6 +269,13 @@ function renderAll() {
 // --- events wiring ---
 addBtn.addEventListener('click', addTask);
 taskInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
+taskInput.addEventListener('input', () => {
+    if (taskInput.value.trim()) {
+        addBtn.classList.add('add');
+    } else {
+        addBtn.classList.remove('add');
+    }
+});
 resetBtn.addEventListener('click', resetAll);
 exportCsvBtn.addEventListener('click', exportCSV);
 exportXlsxBtn.addEventListener('click', exportXLSX);
