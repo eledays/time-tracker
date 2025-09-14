@@ -40,13 +40,32 @@ function totalMsAll() {
     return tasks.reduce((acc, t) => acc + currentTimeForTask(t), 0);
 }
 
+// --- LocalStorage ---
+function saveTasksToLocalStorage() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    localStorage.setItem('idCounter', idCounter);
+}
+
+function loadTasksFromLocalStorage() {
+    const savedTasks = localStorage.getItem('tasks');
+    const savedIdCounter = localStorage.getItem('idCounter');
+    if (savedTasks) {
+        tasks = JSON.parse(savedTasks);
+    }
+    if (savedIdCounter) {
+        idCounter = parseInt(savedIdCounter, 10);
+    }
+    tasks.sort((a, b) => a.id - b.id); // Сортируем задачи по убыванию ID (новые выше)
+}
+
 // --- UI actions ---
 function addTask() {
     const name = taskInput.value.trim();
     if (!name) return;
     const newTask = { id: idCounter++, name, total: 0, runningSince: null };
-    tasks.unshift(newTask);
+    tasks.unshift(newTask); // Добавляем задачу в начало списка
     taskInput.value = '';
+    saveTasksToLocalStorage(); // Save tasks after adding
     renderAll();
 }
 
@@ -71,6 +90,7 @@ function toggleRunning(id) {
             return t;
         }
     });
+    saveTasksToLocalStorage(); // Save tasks after toggling
     renderAll();
 }
 
@@ -78,6 +98,7 @@ function resetAll() {
     if (!confirm('Сбросить все задачи и статистику?')) return;
     tasks = [];
     idCounter = 1;
+    saveTasksToLocalStorage(); // Save tasks after resetting
     renderAll();
 }
 
@@ -240,7 +261,8 @@ function renderAll() {
             right.appendChild(btn);
             el.appendChild(right);
 
-            tasksContainer.appendChild(el);
+            // Insert the task element at the top of the container
+            tasksContainer.prepend(el);
         }
 
         // Update task element
@@ -284,6 +306,7 @@ exportCsvBtn.addEventListener('click', exportCSV);
 exportXlsxBtn.addEventListener('click', exportXLSX);
 
 // initial render
+loadTasksFromLocalStorage(); // Load tasks on initialization
 renderAll();
 
 // resize observer to redraw canvas on width changes
