@@ -60,6 +60,7 @@ function loadTasksFromLocalStorage() {
 
 // --- UI actions ---
 function addTask() {
+    addBtn.classList.remove('add');
     const name = taskInput.value.trim();
     if (!name) return;
     const newTask = { id: idCounter++, name, total: 0, runningSince: null };
