@@ -259,6 +259,9 @@ function renderAll() {
     // Remove unused task elements
     existingTasks.forEach(el => el.remove());
 
+    // Show or hide empty hint
+    emptyHint.style.display = tasks.length === 0 ? 'block' : 'none';
+
     // total
     totalTimeEl.textContent = formatMs(totalMsAll());
 
